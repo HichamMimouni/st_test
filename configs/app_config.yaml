@@ -1,0 +1,25 @@
+app:
+  title: "Process Dashboard"
+  description: "A clean and extensible Streamlit application for internal process management"
+  version: "1.0.0"
+
+categories:
+  # Add your categories and processes here
+
+ui:
+  theme:
+    primary_color: "#FF6B6B"
+    background_color: "#FFFFFF"
+    secondary_background_color: "#F0F2F6"
+    text_color: "#262730"
+  
+  layout:
+    sidebar_width: 300
+    max_width: 1200
+    padding: 20
+
+features:
+  enable_logging: true
+  enable_error_tracking: true
+  enable_analytics: false
+  cache_timeout: 3600 
