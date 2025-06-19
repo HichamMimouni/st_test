@@ -4,7 +4,16 @@ app:
   version: "1.0.0"
 
 categories:
-  # Add your categories and processes here
+  weekly_production:
+    name: "Weekly Production"
+    description: "Analyze and report weekly production data"
+    icon: "📅"
+    processes:
+      - weekly_production_analyzer
+    process_names:
+      weekly_production_analyzer: "Weekly Production Analyzer"
+    process_descriptions:
+      weekly_production_analyzer: "Analyze weekly production data using external package logic"
 
 ui:
   theme:
