@@ -39,15 +39,10 @@ def render_processes_view():
 
 def render_process_selection(processes: dict):
     """Render the process selection interface."""
-    
-    # Load config for category and process names
     config = load_config()
-    categories_config = config.get("categories", {})
-    
-    # Group processes by category
+    categories_config = config.get("categories") or {}
     categories = {}
     for process_name, process_class in processes.items():
-        # Get category from class attribute or instance
         category = getattr(process_class, 'category', None)
         if not category:
             try:
@@ -55,71 +50,53 @@ def render_process_selection(processes: dict):
                 category = getattr(instance, 'category', 'Uncategorized')
             except:
                 category = 'Uncategorized'
-        
         if category not in categories:
             categories[category] = []
         categories[category].append((process_name, process_class))
-    
-    # Category selection
     category_names = list(categories.keys())
-    
-    if "selected_category" not in st.session_state:
-        st.session_state["selected_category"] = category_names[0] if category_names else None
-    
-    # Create display names for categories
-    category_display_names = []
-    for category in category_names:
-        if category in categories_config:
-            display_name = categories_config[category].get("name", category)
-        else:
-            display_name = category.replace("_", " ").title()
-        category_display_names.append(display_name)
-    
-    selected_category = st.selectbox(
-        "📂 Select a Category:",
-        category_names,
-        format_func=lambda x: category_display_names[category_names.index(x)],
-        key="category_selector"
-    )
-    
+    category_display_names = [
+        categories_config.get(cat, {}).get("name", cat.replace("_", " ").title())
+        for cat in category_names
+    ]
+    category_names_with_empty = [None] + category_names
+    category_display_names_with_empty = ["-- Select a Category --"] + category_display_names
+    process_options = []
+    selected_category = None
+    selected_option = None
+    col1, col2 = st.columns(2)
+    with col1:
+        selected_category = st.selectbox(
+            "📂 Select a Category:",
+            category_names_with_empty,
+            format_func=lambda x: category_display_names_with_empty[category_names_with_empty.index(x)] if x in category_names_with_empty else x,
+            key="category_selector"
+        )
+        if not selected_category:
+            st.warning("No category selected, please choose one.")
+            st.session_state.pop("selected_category", None)
+            st.session_state.pop("selected_process", None)
     if selected_category:
         st.session_state["selected_category"] = selected_category
-        
-        # Process selection within category
         category_processes = categories[selected_category]
-        
-        # Create process options with descriptions
-        process_options = []
-        for process_name, process_class in category_processes:
-            # Get display name from config
-            if selected_category in categories_config:
-                process_names_config = categories_config[selected_category].get("process_names", {})
-                display_name = process_names_config.get(process_name, process_name.replace("_", " ").title())
-            else:
-                display_name = process_name.replace("_", " ").title()
-            
-            # Get description from config
-            if selected_category in categories_config:
-                process_descriptions_config = categories_config[selected_category].get("process_descriptions", {})
-                description = process_descriptions_config.get(process_name, "No description available")
-            else:
-                description = "No description available"
-            
-            process_options.append((process_name, display_name, description))
-        
-        # Show process selection
-        if process_options:
-            selected_option = st.selectbox(
-                "🔧 Select a Process:",
-                options=[opt[0] for opt in process_options],
-                format_func=lambda x: next(opt[1] for opt in process_options if opt[0] == x),
-                key="process_selector"
+        process_options = [(None, "-- Select a Process --", "")] + [
+            (process_name,
+             categories_config.get(selected_category, {}).get("process_names", {}).get(process_name, process_name.replace("_", " ").title()),
+             categories_config.get(selected_category, {}).get("process_descriptions", {}).get(process_name, "No description available")
             )
-            
-            if selected_option:
-                st.session_state["selected_process"] = selected_option
-        else:
-            st.warning("No processes available in this category.")
+            for process_name, process_class in category_processes
+        ]
+    with col2:
+        selected_option = st.selectbox(
+            "🔧 Select a Process:",
+            options=[opt[0] for opt in process_options] if process_options else [None],
+            format_func=lambda x: next(opt[1] for opt in process_options if opt[0] == x) if process_options else "-- Select a Process --",
+            key="process_selector"
+        )
+        if not selected_option:
+            st.warning("No process selected, please choose one.")
+            st.session_state.pop("selected_process", None)
+    if selected_category and selected_option:
+        st.session_state["selected_process"] = selected_option
 
 
 def render_selected_process(process_name: str):
